@@ -1,21 +1,18 @@
 name: Fetch Timetable
 on:
-  schedule:
-    - cron: '*/30 * * * *'
   workflow_dispatch:
 
 jobs:
   fetch:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v3
       - name: Fetch Data
         run: |
-          # APIキーをクエリではなくヘッダーとして送信する正しい形式
-          curl -L --connect-timeout 20 --max-time 60 \
-          "https://api-tokyochallenge.odpt.org/api/v4/odpt:StationTimetable?odpt:station=odpt.Station:JR-East.Takasaki.Miyahara" \
-          -H "Authorization: Bearer czqriy4zrz2hmhrvvlaawwz9l2oso4oj6ps5k6tb1op7x7mafh1dr4h3381o1c4y" \
-          > timetable.json
+          # 認証キーをURLに戻し、エラー詳細を表示させる
+          curl -v -L "https://api-tokyochallenge.odpt.org/api/v4/odpt:StationTimetable?odpt:station=odpt.Station:JR-East.Takasaki.Miyahara&acl:consumerKey=czqriy4zrz2hmhrvvlaawwz9l2oso4oj6ps5k6tb1op7x7mafh1dr4h3381o1c4y" > timetable.json
       - name: Commit and Push
         run: |
           git config user.name "github-actions[bot]"
