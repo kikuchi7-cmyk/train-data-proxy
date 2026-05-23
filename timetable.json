@@ -1,1 +1,17 @@
-[]
+[
+  {
+    "odpt:departureTime": "18:50",
+    "odpt:destinationStation": "odpt.Station:JR-East.Takasaki.Ueno",
+    "odpt:trainType": "普通"
+  },
+  {
+    "odpt:departureTime": "19:05",
+    "odpt:destinationStation": "odpt.Station:JR-East.Takasaki.Kagohara",
+    "odpt:trainType": "普通"
+  },
+  {
+    "odpt:departureTime": "19:15",
+    "odpt:destinationStation": "odpt.Station:JR-East.Takasaki.Ueno",
+    "odpt:trainType": "快速"
+  }
+]
