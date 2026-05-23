@@ -1,36 +1,12 @@
-name: Update Timetable Data
-
-on:
-  schedule:
-    - cron: '*/30 * * * *' # 30分おきに自動更新
-  workflow_dispatch:      # 手動実行ボタンを表示
-
-jobs:
-  update-data:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0 # 履歴をすべて取得して競合を抑制
-
-      - name: Fetch Latest Timetable
+- name: Fetch Latest Timetable
         run: |
-          # タイムアウト対策として retry を入れ、接続エラーに強くします
-          curl --retry 3 --retry-delay 5 -L "https://api-tokyochallenge.odpt.org/api/v4/odpt:TrainTimetable?odpt:station=odpt.Station:JR-East.Takasaki.Miyahara" -o timetable.json || echo "Fetch failed but continuing"
-
-      - name: Commit and Push
-        run: |
-          git config --local user.email "github-actions[bot]@users.noreply.github.com"
-          git config --local user.name "github-actions[bot]"
-          
-          # ファイルが存在し、中身がある場合のみ追加
-          if [ -s timetable.json ]; then
-            git add timetable.json
-            # 変更がある場合のみコミット
-            git diff --quiet && git diff --staged --quiet || git commit -m "Update timetable data"
-            # --force を使い、GitHub側の履歴を強制的に上書きして Rejected を回避
-            git push origin main --force
+          # 一時ファイルに保存を試みる
+          if curl --connect-timeout 30 --retry 5 -L "https://api-tokyochallenge.odpt.org/api/v4/odpt:TrainTimetable?odpt:station=odpt.Station:JR-East.Takasaki.Miyahara" -o timetable_new.json; then
+            # 取得成功かつ中身がある場合のみ、本番ファイルを上書き
+            if [ -s timetable_new.json ]; then
+              mv timetable_new.json timetable.json
+              echo "Updated successfully"
+            fi
           else
-            echo "timetable.json is empty, skipping push."
+            echo "Server is down. Keeping the old timetable.json"
           fi
