@@ -1,12 +1,36 @@
-- name: Fetch Latest Timetable
+name: Update Timetable Data
+
+on:
+  schedule:
+    - cron: '*/30 * * * *'
+  workflow_dispatch:
+
+jobs:
+  update-data:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Fetch Latest Timetable
         run: |
-          # 一時ファイルに保存を試みる
           if curl --connect-timeout 30 --retry 5 -L "https://api-tokyochallenge.odpt.org/api/v4/odpt:TrainTimetable?odpt:station=odpt.Station:JR-East.Takasaki.Miyahara" -o timetable_new.json; then
-            # 取得成功かつ中身がある場合のみ、本番ファイルを上書き
             if [ -s timetable_new.json ]; then
               mv timetable_new.json timetable.json
               echo "Updated successfully"
             fi
           else
             echo "Server is down. Keeping the old timetable.json"
+          fi
+
+      - name: Commit and Push
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          if [ -f timetable.json ]; then
+            git add timetable.json
+            git commit -m "Update timetable data" || echo "No changes to commit"
+            git push origin main --force
           fi
