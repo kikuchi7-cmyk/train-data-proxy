@@ -1,9 +1,8 @@
 name: Fetch Timetable
-
 on:
   schedule:
-    - cron: '*/30 * * * *' # 30分おきに自動取得
-  workflow_dispatch: # 手動実行も可能
+    - cron: '*/30 * * * *'
+  workflow_dispatch:
 
 jobs:
   fetch:
@@ -12,11 +11,12 @@ jobs:
       - uses: actions/checkout@v3
       - name: Fetch Data
         run: |
-          curl -L "https://api-tokyochallenge.odpt.org/api/v4/odpt:StationTimetable?odpt:station=odpt.Station:JR-East.Takasaki.Miyahara&acl:consumerKey=czqriy4zrz2hmhrvvlaawwz9l2oso4oj6ps5k6tb1op7x7mafh1dr4h3381o1c4y" > timetable.json
+          # --connect-timeout を短めに設定し、接続が遅い場合は諦めて次に進ませる
+          curl -L --connect-timeout 10 --max-time 30 "https://api-tokyochallenge.odpt.org/api/v4/odpt:StationTimetable?odpt:station=odpt.Station:JR-East.Takasaki.Miyahara&acl:consumerKey=czqriy4zrz2hmhrvvlaawwz9l2oso4oj6ps5k6tb1op7x7mafh1dr4h3381o1c4y" > timetable.json || echo "[]" > timetable.json
       - name: Commit and Push
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          # ファイルに変更がある場合のみコミット
           git add timetable.json
-          git commit -m "Update timetable data"
-          git push
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Update timetable data" && git push)
