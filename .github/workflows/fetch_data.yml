@@ -1,0 +1,22 @@
+name: Fetch Timetable
+
+on:
+  schedule:
+    - cron: '*/30 * * * *' # 30分おきに自動取得
+  workflow_dispatch: # 手動実行も可能
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Fetch Data
+        run: |
+          curl -L "https://api-tokyochallenge.odpt.org/api/v4/odpt:StationTimetable?odpt:station=odpt.Station:JR-East.Takasaki.Miyahara&acl:consumerKey=czqriy4zrz2hmhrvvlaawwz9l2oso4oj6ps5k6tb1op7x7mafh1dr4h3381o1c4y" > timetable.json
+      - name: Commit and Push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add timetable.json
+          git commit -m "Update timetable data"
+          git push
