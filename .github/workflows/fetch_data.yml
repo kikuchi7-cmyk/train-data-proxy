@@ -1,24 +1,31 @@
-name: Fetch Timetable
+name: Update Timetable Data
+
 on:
   schedule:
-    - cron: '*/30 * * * *'
-  workflow_dispatch:
+    - cron: '*/30 * * * *' # 30分おきに実行（お好みで調整してください）
+  workflow_dispatch: # 手動実行ボタンを有効化
 
 jobs:
-  fetch:
+  update-data:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     steps:
-      - uses: actions/checkout@v3
-      - name: Fetch Data
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # すべての履歴を取得して競合を防ぐ
+
+      - name: Fetch Latest Timetable
         run: |
-          # APIサーバーがダメなら、GitHub上のオープンデータソースから取得を試みる
-          # ※このURLは実験的なミラーです
-          curl -L -o timetable.json "https://raw.githubusercontent.com/odpt/odpt-sample-data/master/station_timetable/JR-East.Takasaki.Miyahara.json"
+          # データを取得してファイルに保存
+          curl -L "https://api-tokyochallenge.odpt.org/api/v4/odpt:TrainTimetable?odpt:station=odpt.Station:JR-East.Takasaki.Miyahara" -o timetable.json
+          # ※もしAPIキーが必要なURLだった場合は、以前使っていたURLに差し替えてください
+
       - name: Commit and Push
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
           git add timetable.json
-          git diff --quiet && git diff --staged --quiet || (git commit -m "Update timetable data" && git push)
+          # 変更がある場合のみコミット
+          git diff --quiet && git diff --staged --quiet || git commit -m "Update timetable data"
+          # 強制的にメインブランチへ反映（競合エラーを回避）
+          git push origin main --force
